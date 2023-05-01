@@ -124,7 +124,7 @@ model Message {
   userReceipt                     Json?
   verifiedBizName                 String?
 
-  @@unique([sessionId, remoteJid, id], map: "unique_message_key_per_session_id")
+  // @@unique([sessionId, remoteJid, id], map: "unique_message_key_per_session_id")
   @@index([sessionId])
 }
 
