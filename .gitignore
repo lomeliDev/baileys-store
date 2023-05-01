@@ -2,3 +2,5 @@ node_modules/
 dist/
 prisma/migrations/
 .env
+yarn.lock
+package-lock.json

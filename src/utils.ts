@@ -9,6 +9,8 @@ export function transformPrisma<T extends Record<string, any>>(
 ): MakeTransformedPrisma<T> {
   const obj = { ...data } as any;
 
+  delete obj.pkId;
+
   for (const [key, val] of Object.entries(obj)) {
     if (val instanceof Uint8Array) {
       obj[key] = Buffer.from(val);
