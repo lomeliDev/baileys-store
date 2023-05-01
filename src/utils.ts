@@ -10,11 +10,10 @@ export function transformPrisma<T extends Record<string, any>>(
   const obj = { ...data } as any;
 
   try {
-    delete obj.pkId;  
+    delete obj.pkId;
   } catch (error) {
-    
+    console.log(error);
   }
-  
 
   for (const [key, val] of Object.entries(obj)) {
     if (val instanceof Uint8Array) {

@@ -45,11 +45,20 @@ export default function messageHandler(sessionId: string, event: BaileysEventEmi
           try {
             const jid = jidNormalizedUser(message.key.remoteJid!);
             const data = transformPrisma(message);
+
+            const dataTx = await prisma.message.findFirst({
+              select: { pkId: true },
+              where: { remoteJid: jid, id: message.key.id!, sessionId },
+            });
+            if (!dataTx) {
+              return;
+            }
+
             await prisma.message.upsert({
               select: { pkId: true },
               create: { ...data, remoteJid: jid, id: message.key.id!, sessionId },
               update: { ...data },
-              where: { sessionId_remoteJid_id: { remoteJid: jid, id: message.key.id!, sessionId } },
+              where: { pkId: dataTx.pkId },
             });
 
             const chatExists = (await prisma.chat.count({ where: { id: jid, sessionId } })) > 0;
@@ -82,16 +91,6 @@ export default function messageHandler(sessionId: string, event: BaileysEventEmi
           }
 
           const data = { ...prevData, ...update } as proto.IWebMessageInfo;
-          await tx.message.delete({
-            select: { pkId: true },
-            where: {
-              sessionId_remoteJid_id: {
-                id: key.id!,
-                remoteJid: key.remoteJid!,
-                sessionId,
-              },
-            },
-          });
           await tx.message.create({
             select: { pkId: true },
             data: {
@@ -145,12 +144,18 @@ export default function messageHandler(sessionId: string, event: BaileysEventEmi
             userReceipt.push(receipt);
           }
 
+          const data = await tx.message.findFirst({
+            select: { pkId: true },
+            where: { remoteJid: key.remoteJid!, sessionId, id: String(key.id!) },
+          });
+          if (!data) {
+            return;
+          }
+
           await tx.message.update({
             select: { pkId: true },
             data: transformPrisma({ userReceipt: userReceipt }),
-            where: {
-              sessionId_remoteJid_id: { id: key.id!, remoteJid: key.remoteJid!, sessionId },
-            },
+            where: { pkId: data.pkId },
           });
         });
       } catch (e) {
@@ -177,12 +182,19 @@ export default function messageHandler(sessionId: string, event: BaileysEventEmi
           );
 
           if (reaction.text) reactions.push(reaction);
+
+          const data = await tx.message.findFirst({
+            select: { pkId: true },
+            where: { remoteJid: key.remoteJid!, sessionId, id: String(key.id!) },
+          });
+          if (!data) {
+            return;
+          }
+
           await tx.message.update({
             select: { pkId: true },
             data: transformPrisma({ reactions: reactions }),
-            where: {
-              sessionId_remoteJid_id: { id: key.id!, remoteJid: key.remoteJid!, sessionId },
-            },
+            where: { pkId: data.pkId },
           });
         });
       } catch (e) {
